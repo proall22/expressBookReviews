@@ -16,98 +16,72 @@ const authenticatedUser = (username, password) => {
   return !!user;
 }
 
-// Only registered users can login
+// Task 8: Login endpoint
 regd_users.post("/login", (req, res) => {
   const { username, password } = req.body;
 
-  // Check if username and password are provided
   if (!username || !password) {
     return res.status(400).json({ message: "Username and password are required" });
   }
 
-  // Authenticate the user
   if (authenticatedUser(username, password)) {
-    // Create JWT token
-    const accessToken = jwt.sign(
-      {
-        username: username
-      },
-      "fingerprint_customer", // Secret key (must match index.js)
-      { expiresIn: 60 * 60 } // 1 hour expiration
-    );
+    const accessToken = jwt.sign({ username: username }, "fingerprint_customer", { expiresIn: '1h' });
 
-    // Store token in session
     req.session.accessToken = accessToken;
     req.session.username = username;
 
-    return res.status(200).json({
-      message: "Login successful",
-      username: username
-    });
+    // EXACT FORMAT REQUIRED
+    return res.status(200).json({ message: "Login successful!" });
   } else {
     return res.status(401).json({ message: "Invalid username or password" });
   }
 });
 
-// Add or update a book review
+// Task 9: Add/Modify review
 regd_users.put("/auth/review/:isbn", (req, res) => {
   const isbn = req.params.isbn;
   const { review } = req.body;
-  const username = req.user.username; // From authentication middleware
+  const username = req.user.username;
 
-  // Check if book exists
   if (!books[isbn]) {
     return res.status(404).json({ message: "Book not found" });
   }
 
-  // Check if review is provided
   if (!review || review.trim() === '') {
     return res.status(400).json({ message: "Review text is required" });
   }
 
-  // Initialize reviews object if it doesn't exist
   if (!books[isbn].reviews) {
     books[isbn].reviews = {};
   }
 
-  // Check if user already has a review for this book
   const alreadyReviewed = books[isbn].reviews.hasOwnProperty(username);
-
-  // Add or update the review
   books[isbn].reviews[username] = review.trim();
 
+  // SIMPLIFIED OUTPUT
   return res.status(200).json({
-    message: `Review ${alreadyReviewed ? 'updated' : 'added'} successfully`,
-    isbn: isbn,
-    title: books[isbn].title,
-    review: review,
-    reviews: books[isbn].reviews
+    message: `Review ${alreadyReviewed ? 'updated' : 'added'} successfully`
   });
 });
 
-// Delete a book review
+// Task 10: Delete review
 regd_users.delete("/auth/review/:isbn", (req, res) => {
   const isbn = req.params.isbn;
-  const username = req.user.username; // From authentication middleware
+  const username = req.user.username;
 
-  // Check if book exists
   if (!books[isbn]) {
     return res.status(404).json({ message: "Book not found" });
   }
 
-  // Check if user has a review for this book
   if (!books[isbn].reviews || !books[isbn].reviews[username]) {
     return res.status(404).json({ message: "Review not found for this user" });
   }
 
-  // Delete the review
   delete books[isbn].reviews[username];
 
+  // SIMPLIFIED OUTPUT
   return res.status(200).json({
-    message: "Review deleted successfully",
-    isbn: isbn,
-    title: books[isbn].title,
-    reviews: books[isbn].reviews
+    message: "Review deleted successfully"
   });
 });
 

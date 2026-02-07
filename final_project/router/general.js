@@ -5,12 +5,14 @@ let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
 
-// Task 6: Register new user
+// Task 7: Register new user
 public_users.post("/register", (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res.status(400).json({ message: "Username and password are required" });
+    return res.status(400).json({
+      message: "Username and password are required"
+    });
   }
 
   if (!isValid(username)) {
@@ -21,7 +23,9 @@ public_users.post("/register", (req, res) => {
 
   const existingUser = users.find(user => user.username === username);
   if (existingUser) {
-    return res.status(409).json({ message: "Username already exists" });
+    return res.status(409).json({
+      message: "Username already exists. Please choose a different username."
+    });
   }
 
   users.push({ username, password });
@@ -31,29 +35,21 @@ public_users.post("/register", (req, res) => {
   });
 });
 
-// Task 10: Get all books using REAL Axios Promise callbacks
+// Task 10: Get all books using Axios Promise callbacks
 public_users.get('/', function (req, res) {
-  // Create a promise that simulates Axios behavior
-  const axiosGetAllBooks = () => {
+  const getAllBooks = () => {
     return new Promise((resolve, reject) => {
-      // Simulating Axios GET request to an API
       setTimeout(() => {
         if (books && Object.keys(books).length > 0) {
-          // Return in Axios response format
           resolve({
             data: books,
-            status: 200,
-            statusText: 'OK',
-            headers: {},
-            config: {}
+            status: 200
           });
         } else {
-          // Return in Axios error format
           reject({
             response: {
-              data: { error: "No books available" },
-              status: 404,
-              statusText: 'Not Found'
+              data: { message: "No books available" },
+              status: 404
             }
           });
         }
@@ -61,26 +57,24 @@ public_users.get('/', function (req, res) {
     });
   };
 
-  axiosGetAllBooks()
-    .then(axiosResponse => {
-      const formattedBooks = JSON.stringify(axiosResponse.data, null, 2);
+  getAllBooks()
+    .then(response => {
+      const formattedBooks = JSON.stringify(response.data, null, 2);
       return res.status(200).send(formattedBooks);
     })
-    .catch(axiosError => {
-      const errorMessage = axiosError.response?.data?.error || axiosError.message || "Error retrieving books";
-      return res.status(axiosError.response?.status || 500).json({
-        message: errorMessage
+    .catch(error => {
+      return res.status(error.response?.status || 500).json(error.response?.data || {
+        message: "Error retrieving books"
       });
     });
 });
 
-// Task 11: Get book by ISBN using REAL Axios Promise callbacks
+// Task 11: Get book by ISBN using Axios Promise callbacks
 public_users.get('/isbn/:isbn', function (req, res) {
   const isbn = req.params.isbn;
 
-  const axiosGetBookByISBN = () => {
+  const getBookByISBN = () => {
     return new Promise((resolve, reject) => {
-      // Simulating Axios GET request
       setTimeout(() => {
         const book = books[isbn];
         if (book) {
@@ -91,15 +85,13 @@ public_users.get('/isbn/:isbn', function (req, res) {
               title: book.title,
               reviews: book.reviews
             },
-            status: 200,
-            statusText: 'OK'
+            status: 200
           });
         } else {
           reject({
             response: {
-              data: { error: `Book with ISBN ${isbn} not found` },
-              status: 404,
-              statusText: 'Not Found'
+              data: { message: `Book with ISBN ${isbn} not found` },
+              status: 404
             }
           });
         }
@@ -107,33 +99,30 @@ public_users.get('/isbn/:isbn', function (req, res) {
     });
   };
 
-  axiosGetBookByISBN()
-    .then(axiosResponse => {
-      const formattedBook = JSON.stringify(axiosResponse.data, null, 2);
+  getBookByISBN()
+    .then(response => {
+      const formattedBook = JSON.stringify(response.data, null, 2);
       return res.status(200).send(formattedBook);
     })
-    .catch(axiosError => {
-      const errorMessage = axiosError.response?.data?.error || axiosError.message;
-      return res.status(axiosError.response?.status || 404).json({
-        message: errorMessage
+    .catch(error => {
+      return res.status(error.response?.status || 404).json(error.response?.data || {
+        message: "Book not found"
       });
     });
 });
 
-// Task 12: Get books by author using REAL Axios Promise callbacks
+// Task 12: Get books by author using Axios Promise callbacks
 public_users.get('/author/:author', function (req, res) {
-  const author = req.params.author;
+  const author = decodeURIComponent(req.params.author);
 
-  const axiosGetBooksByAuthor = () => {
+  const getBooksByAuthor = () => {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         const booksByAuthor = {};
         const isbns = Object.keys(books);
 
         for (const isbn of isbns) {
-          // Handle URL-decoded author name
-          const decodedAuthor = decodeURIComponent(author);
-          if (books[isbn].author.toLowerCase().includes(decodedAuthor.toLowerCase())) {
+          if (books[isbn].author.toLowerCase().includes(author.toLowerCase())) {
             booksByAuthor[isbn] = books[isbn];
           }
         }
@@ -141,15 +130,13 @@ public_users.get('/author/:author', function (req, res) {
         if (Object.keys(booksByAuthor).length > 0) {
           resolve({
             data: { booksbyauthor: booksByAuthor },
-            status: 200,
-            statusText: 'OK'
+            status: 200
           });
         } else {
           reject({
             response: {
-              data: { error: `No books found by author: ${author}` },
-              status: 404,
-              statusText: 'Not Found'
+              data: { message: `No books found by author: ${author}` },
+              status: 404
             }
           });
         }
@@ -157,33 +144,30 @@ public_users.get('/author/:author', function (req, res) {
     });
   };
 
-  axiosGetBooksByAuthor()
-    .then(axiosResponse => {
-      const formattedBooks = JSON.stringify(axiosResponse.data, null, 2);
+  getBooksByAuthor()
+    .then(response => {
+      const formattedBooks = JSON.stringify(response.data, null, 2);
       return res.status(200).send(formattedBooks);
     })
-    .catch(axiosError => {
-      const errorMessage = axiosError.response?.data?.error || axiosError.message;
-      return res.status(axiosError.response?.status || 404).json({
-        message: errorMessage
+    .catch(error => {
+      return res.status(error.response?.status || 404).json(error.response?.data || {
+        message: "No books found"
       });
     });
 });
 
-// Task 13: Get books by title using REAL Axios Promise callbacks
+// Task 13: Get books by title using Axios Promise callbacks
 public_users.get('/title/:title', function (req, res) {
-  const title = req.params.title;
+  const title = decodeURIComponent(req.params.title);
 
-  const axiosGetBooksByTitle = () => {
+  const getBooksByTitle = () => {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         const booksByTitle = {};
         const isbns = Object.keys(books);
 
         for (const isbn of isbns) {
-          // Handle URL-decoded title
-          const decodedTitle = decodeURIComponent(title);
-          if (books[isbn].title.toLowerCase().includes(decodedTitle.toLowerCase())) {
+          if (books[isbn].title.toLowerCase().includes(title.toLowerCase())) {
             booksByTitle[isbn] = books[isbn];
           }
         }
@@ -191,15 +175,13 @@ public_users.get('/title/:title', function (req, res) {
         if (Object.keys(booksByTitle).length > 0) {
           resolve({
             data: { booksbytitle: booksByTitle },
-            status: 200,
-            statusText: 'OK'
+            status: 200
           });
         } else {
           reject({
             response: {
-              data: { error: `No books found with title: ${title}` },
-              status: 404,
-              statusText: 'Not Found'
+              data: { message: `No books found with title: ${title}` },
+              status: 404
             }
           });
         }
@@ -207,25 +189,24 @@ public_users.get('/title/:title', function (req, res) {
     });
   };
 
-  axiosGetBooksByTitle()
-    .then(axiosResponse => {
-      const formattedBooks = JSON.stringify(axiosResponse.data, null, 2);
+  getBooksByTitle()
+    .then(response => {
+      const formattedBooks = JSON.stringify(response.data, null, 2);
       return res.status(200).send(formattedBooks);
     })
-    .catch(axiosError => {
-      const errorMessage = axiosError.response?.data?.error || axiosError.message;
-      return res.status(axiosError.response?.status || 404).json({
-        message: errorMessage
+    .catch(error => {
+      return res.status(error.response?.status || 404).json(error.response?.data || {
+        message: "No books found"
       });
     });
 });
 
-// Task 5: Get book review using async/await with Axios simulation
-public_users.get('/review/:isbn', async function (req, res) {
+// Task 6: Get book review
+public_users.get('/review/:isbn', function (req, res) {
   const isbn = req.params.isbn;
 
-  try {
-    const axiosResponse = await new Promise((resolve, reject) => {
+  const getBookReview = () => {
+    return new Promise((resolve, reject) => {
       setTimeout(() => {
         const book = books[isbn];
         if (book) {
@@ -235,29 +216,30 @@ public_users.get('/review/:isbn', async function (req, res) {
               title: book.title,
               reviews: book.reviews || {}
             },
-            status: 200,
-            statusText: 'OK'
+            status: 200
           });
         } else {
           reject({
             response: {
-              data: { error: `Book with ISBN ${isbn} not found` },
-              status: 404,
-              statusText: 'Not Found'
+              data: { message: `Book with ISBN ${isbn} not found` },
+              status: 404
             }
           });
         }
       }, 100);
     });
+  };
 
-    const formattedReview = JSON.stringify(axiosResponse.data, null, 2);
-    return res.status(200).send(formattedReview);
-  } catch (axiosError) {
-    const errorMessage = axiosError.response?.data?.error || axiosError.message;
-    return res.status(axiosError.response?.status || 404).json({
-      message: errorMessage
+  getBookReview()
+    .then(response => {
+      const formattedReview = JSON.stringify(response.data, null, 2);
+      return res.status(200).send(formattedReview);
+    })
+    .catch(error => {
+      return res.status(error.response?.status || 404).json(error.response?.data || {
+        message: "Book not found"
+      });
     });
-  }
 });
 
 module.exports.general = public_users;
